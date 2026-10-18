@@ -1,0 +1,89 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+  }
+}
+
+.doc-font {
+  font-family: 'Noto Naskh Arabic', 'Cairo', serif;
+}
+
+/* A4 Sheet styling for screen simulation */
+.a4-page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 12mm 15mm;
+  margin: 1.5rem auto;
+  background: white;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Crisp official table borders matching SAAED document */
+.table-official {
+  border: 1.5px solid #000;
+  border-collapse: collapse;
+}
+
+.table-official th,
+.table-official td {
+  border: 1px solid #000;
+}
+
+/* In-place editable cell */
+.editable-cell {
+  outline: none;
+  min-height: 1.4em;
+  transition: all 0.15s ease-in-out;
+  border-radius: 2px;
+}
+
+.edit-mode .editable-cell:hover {
+  background-color: rgba(59, 130, 246, 0.08);
+  cursor: text;
+}
+
+.edit-mode .editable-cell:focus {
+  background-color: rgba(239, 246, 255, 1);
+  box-shadow: inset 0 0 0 1.5px #2563eb;
+}
+
+/* Custom Print Rules for exact A4 reproduction */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm;
+  }
+  body {
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .a4-page {
+    width: 100% !important;
+    min-height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .page-break {
+    page-break-before: always;
+  }
+  table {
+    page-break-inside: auto;
+  }
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  thead {
+    display: table-header-group;
+  }
+}
