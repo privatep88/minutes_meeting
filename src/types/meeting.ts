@@ -30,6 +30,34 @@ export interface SignatureBlock {
   scale?: number;
 }
 
+export interface AuditRecord {
+  id: string;
+  action: string;
+  userName: string;
+  timestamp: string;
+  details?: string;
+  actionLabel?: string;
+  user?: string;
+  userEmail?: string;
+  reason?: string;
+  previousStatus?: string;
+  newStatus?: string;
+}
+
+export interface ApprovalRecord {
+  id: string;
+  approverName: string;
+  approverEmail: string;
+  timestamp: string;
+  notes?: string;
+  versionNumber?: string | number;
+  approvedAt?: string;
+  approvedBy?: string;
+  userEmail?: string;
+  chairName?: string;
+  rapporteurName?: string;
+}
+
 export interface MeetingMinute {
   id: string;
   title: string;
@@ -49,6 +77,9 @@ export interface MeetingMinute {
   attendees: Attendee[];
   sections: AgendaSection[];
   signatures: SignatureBlock[];
+  reapprovalRequired?: boolean;
+  auditLog?: AuditRecord[];
+  approvalHistory?: ApprovalRecord[];
   createdAt: string;
   updatedAt: string;
 }

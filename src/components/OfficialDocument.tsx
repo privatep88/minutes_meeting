@@ -326,13 +326,13 @@ export const OfficialDocument: React.FC<OfficialDocumentProps> = ({
             <tr>
               {/* Col 1 (Right in RTL): Form Code & Revision Control */}
               <td className="w-[28%] p-2 text-center align-middle text-xs md:text-sm font-semibold space-y-1 bg-white">
-                <div className="flex items-center justify-center gap-1.5">
+                <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
                   <span className="text-slate-700 font-semibold font-sans">رقم النموذج:</span>
                   <div
                     contentEditable={isEditMode}
                     suppressContentEditableWarning
                     onBlur={(e) => updateField('formNumber', e.currentTarget.innerText)}
-                    className="editable-cell text-slate-700 font-semibold font-sans px-1 text-center"
+                    className="editable-cell text-slate-700 font-semibold font-sans px-1 text-center whitespace-nowrap"
                   >
                     {meeting.formNumber}
                   </div>

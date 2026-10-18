@@ -64,7 +64,10 @@ export const ArchiveScreen: React.FC<ArchiveScreenProps> = ({
       m.attendees.some((a) => a.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesStatus = filterStatus === 'all' || m.status === filterStatus;
-    return matchesSearch && matchesStatus;
+    const isRegular = currentUser?.role === 'regular';
+    const matchesRegularRule = !isRegular || m.status === 'معتمد وموقع';
+
+    return matchesSearch && matchesStatus && matchesRegularRule;
   });
 
   const [archiveAlert, setArchiveAlert] = useState<{
@@ -151,14 +154,16 @@ export const ArchiveScreen: React.FC<ArchiveScreenProps> = ({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={onCreateNewMeeting}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs md:text-sm font-semibold shadow-xs transition cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>إنشاء محضر جديد</span>
-        </button>
+        {currentUser?.role !== 'regular' && (
+          <button
+            type="button"
+            onClick={onCreateNewMeeting}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs md:text-sm font-semibold shadow-xs transition cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>إنشاء محضر جديد</span>
+          </button>
+        )}
       </div>
 
       {/* Search & Filter Bar */}

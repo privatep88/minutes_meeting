@@ -131,13 +131,13 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           )}
         </div>
 
-        <div className="flex items-center justify-center mb-0.5">
+        <div className="flex items-center justify-center mb-0.5 px-24 sm:px-36 mx-auto">
           <h1 className="text-base sm:text-lg md:text-xl font-extrabold tracking-tight leading-tight text-white text-center">
             نظام إدارة وتوثيق محاضر الاجتماعات
           </h1>
         </div>
 
-        <div className="flex flex-col items-center justify-center gap-1 text-center mt-0.5">
+        <div className="flex flex-col items-center justify-center gap-1 text-center mt-0.5 px-24 sm:px-36 mx-auto">
           <span className="text-xs text-slate-300 font-medium">
             إدارة الخدمات العامة — قسم إدارة المرافق
           </span>
@@ -339,7 +339,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
               <button
                 type="button"
                 onClick={onPrint}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-600/20 transition cursor-pointer"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white shadow-md shadow-indigo-600/20 transition cursor-pointer"
               >
                 <Printer className="w-4 h-4" />
                 <span>طباعة A4</span>
@@ -377,7 +377,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                 <button
                   type="button"
                   onClick={onPrint}
-                  className="p-2 rounded-lg bg-emerald-600 text-white text-xs font-bold transition"
+                  className="p-2 rounded-lg bg-indigo-600 text-white text-xs font-bold transition"
                   title="طباعة A4"
                 >
                   <Printer className="w-4 h-4" />
@@ -591,7 +591,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                     onPrint();
                     setMobileMenuOpen(false);
                   }}
-                  className="col-span-2 flex items-center justify-center gap-1.5 p-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold"
+                  className="col-span-2 flex items-center justify-center gap-1.5 p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold"
                 >
                   <Printer className="w-4 h-4" />
                   <span>طباعة A4 معتمدة</span>

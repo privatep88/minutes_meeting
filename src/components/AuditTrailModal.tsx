@@ -213,7 +213,7 @@ export const AuditTrailModal: React.FC<AuditTrailModalProps> = ({
                               اعتماد رسمي موثق (الإصدار {appr.versionNumber})
                             </div>
                             <div className="text-[11px] text-emerald-700 font-sans">
-                              {new Date(appr.approvedAt).toLocaleString('ar-SA')}
+                              {new Date(appr.approvedAt || appr.timestamp || '').toLocaleString('ar-SA')}
                             </div>
                           </div>
                         </div>
