@@ -81,7 +81,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
         {/* Top-Right Official Logo (Vertically Centered) */}
         <div className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 flex items-center justify-center z-10">
           <img
-            src="/logo.png"
+            src="logo.png"
             alt="شعار شركة ساعد للأنظمة المرورية"
             className="h-8 sm:h-10 max-w-[150px] object-contain select-none"
           />

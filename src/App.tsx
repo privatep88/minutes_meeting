@@ -55,7 +55,7 @@ export default function App() {
         if (Array.isArray(parsed) && parsed.length > 0) {
             // Adopt official logo and ensure latest revision defaults
             const migrated = parsed.map((m: MeetingMinute) => {
-              m.logoSrc = '/logo.png';
+              m.logoSrc = 'logo.png';
             if (
               m.id === 'saaed-min-2026-00' ||
               m.id === 'saaed-min-2026-02' ||

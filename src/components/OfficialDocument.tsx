@@ -386,11 +386,11 @@ export const OfficialDocument: React.FC<OfficialDocumentProps> = ({
               <td className="w-[25%] p-2 align-middle text-center bg-white relative group">
                 <div className="flex items-center justify-center min-h-[64px] py-1">
                   <img
-                    src={meeting.logoSrc || '/logo.png'}
+                    src={meeting.logoSrc || 'logo.png'}
                     alt="شعار شركة ساعد للأنظمة المرورية"
                     referrerPolicy="no-referrer"
                     onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = '/logo.png';
+                      (e.currentTarget as HTMLImageElement).src = 'logo.png';
                     }}
                     className="max-h-20 max-w-full object-contain mx-auto select-none"
                   />

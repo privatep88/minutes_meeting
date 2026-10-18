@@ -1,6 +1,6 @@
 import { MeetingMinute, SystemUser } from '../types/meeting';
 
-export const OFFICIAL_SAAED_LOGO = '/logo.png';
+export const OFFICIAL_SAAED_LOGO = 'logo.png';
 
 export const initialMeetingData: MeetingMinute = {
   id: 'saaed-min-2026-01',
