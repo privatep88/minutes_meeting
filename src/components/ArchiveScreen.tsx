@@ -18,26 +18,32 @@ import {
   Table as TableIcon,
   LayoutGrid,
 } from 'lucide-react';
-import { MeetingMinute } from '../types/meeting';
+import { MeetingMinute, SystemUser } from '../types/meeting';
+import { checkMandatorySignatures } from '../utils/signatureUtils';
+import { AlertCircle, ShieldAlert, CheckCircle2, Shield } from 'lucide-react';
 
 interface ArchiveScreenProps {
   meetings: MeetingMinute[];
   activeMeetingId: string;
-  onSelectMeeting: (id: string) => void;
+  currentUser?: SystemUser;
+  onSelectMeeting: (id: string, forceEditMode?: boolean) => void;
   onCreateNewMeeting: () => void;
   onCloneMeeting: (id: string) => void;
   onDeleteMeeting: (id: string) => void;
-  onUpdateMeeting: (updated: MeetingMinute) => void;
+  onUpdateMeeting: (updated: MeetingMinute, forceEditMode?: boolean) => void;
+  onExportWord?: (meeting: MeetingMinute) => void;
 }
 
 export const ArchiveScreen: React.FC<ArchiveScreenProps> = ({
   meetings,
   activeMeetingId,
+  currentUser,
   onSelectMeeting,
   onCreateNewMeeting,
   onCloneMeeting,
   onDeleteMeeting,
   onUpdateMeeting,
+  onExportWord,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -61,14 +67,68 @@ export const ArchiveScreen: React.FC<ArchiveScreenProps> = ({
     return matchesSearch && matchesStatus;
   });
 
+  const [archiveAlert, setArchiveAlert] = useState<{
+    title: string;
+    message: string;
+    missingRoles?: string[];
+  } | null>(null);
+
+  const [approvalConfirm, setApprovalConfirm] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
+
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingMeeting) return;
-    onUpdateMeeting({
-      ...editingMeeting,
-      updatedAt: new Date().toISOString(),
-    });
+
+    // If user attempts to mark as "معتمد وموقع", check mandatory signatures!
+    if (editingMeeting.status === 'معتمد وموقع') {
+      const { isComplete, missingRoles } = checkMandatorySignatures(editingMeeting.signatures);
+      if (!isComplete) {
+        setArchiveAlert({
+          title: 'يتعذر اعتماد المحضر رسمياً',
+          message:
+            'لا يمكن تحويل المحضر إلى حالة (معتمد وموقع رسمياً) إلا بعد إضافة توقيع كلا من "مقرر الاجتماع" و "رئيس الاجتماع" بشكل إلزامي.',
+          missingRoles,
+        });
+        return;
+      }
+
+      // Show confirmation modal
+      setApprovalConfirm({
+        title: 'تأكيد اعتماد وتوقيع المحضر رسمياً',
+        message:
+          'تم استكمال التواقيع الإلزامية لكل من (مقرر الاجتماع) و(رئيس الاجتماع). هل تؤكد الاعتماد النهائي للمحضر وقفل التعديل المباشر لتحويله لنمط المعاينة؟',
+        onConfirm: () => {
+          onUpdateMeeting(
+            {
+              ...editingMeeting,
+              updatedAt: new Date().toISOString(),
+            },
+            false
+          );
+          setEditingMeeting(null);
+          onSelectMeeting(editingMeeting.id, false);
+          setApprovalConfirm(null);
+        },
+      });
+      return;
+    }
+
+    const isNowDraft = true;
+
+    onUpdateMeeting(
+      {
+        ...editingMeeting,
+        updatedAt: new Date().toISOString(),
+      },
+      isNowDraft
+    );
+
     setEditingMeeting(null);
+    onSelectMeeting(editingMeeting.id, isNowDraft);
   };
 
   const handleConfirmDelete = () => {
@@ -161,7 +221,7 @@ export const ArchiveScreen: React.FC<ArchiveScreenProps> = ({
 
       {/* Official Centered Table View */}
       {viewMode === 'table' ? (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-x-auto">
           <table className="w-full text-center text-xs md:text-sm">
             <thead className="bg-[#85b8db] text-black font-bold">
               <tr>
@@ -230,30 +290,51 @@ export const ArchiveScreen: React.FC<ArchiveScreenProps> = ({
                         >
                           <ExternalLink className="w-4 h-4" />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditingMeeting({ ...meeting })}
-                          title="تحرير وتعديل بيانات المحضر"
-                          className="p-1.5 text-amber-600 hover:bg-amber-100/60 rounded-md transition cursor-pointer"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onCloneMeeting(meeting.id)}
-                          title="تكرار المحضر كنسخة جديدة"
-                          className="p-1.5 text-slate-500 hover:bg-slate-200 rounded-md transition cursor-pointer"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setMeetingToDelete(meeting)}
-                          title="حذف هذا المحضر"
-                          className="p-1.5 text-rose-500 hover:bg-rose-100/60 rounded-md transition cursor-pointer"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {currentUser?.role !== 'regular' && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setEditingMeeting({ ...meeting })}
+                              title="تحرير وتعديل بيانات المحضر"
+                              className="p-1.5 text-amber-600 hover:bg-amber-100/60 rounded-md transition cursor-pointer"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onCloneMeeting(meeting.id)}
+                              title="تكرار المحضر كنسخة جديدة"
+                              className="p-1.5 text-slate-500 hover:bg-slate-200 rounded-md transition cursor-pointer"
+                            >
+                              <Copy className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                        {onExportWord && (
+                          <button
+                            type="button"
+                            onClick={() => onExportWord(meeting)}
+                            title="تصدير إلى Word (.docx)"
+                            className="p-1.5 text-blue-600 hover:bg-blue-100/60 rounded-md transition cursor-pointer relative"
+                          >
+                            <div className="relative flex items-center justify-center">
+                              <FileText className="w-4 h-4 text-blue-600" />
+                              <span className="absolute -bottom-1 -right-1 text-[6px] font-black bg-blue-600 text-white rounded-[1.5px] px-0.5 leading-none">
+                                W
+                              </span>
+                            </div>
+                          </button>
+                        )}
+                        {currentUser?.role !== 'regular' && (
+                          <button
+                            type="button"
+                            onClick={() => setMeetingToDelete(meeting)}
+                            title="حذف هذا المحضر"
+                            className="p-1.5 text-rose-500 hover:bg-rose-100/60 rounded-md transition cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -338,35 +419,58 @@ export const ArchiveScreen: React.FC<ArchiveScreenProps> = ({
                 </button>
 
                 <div className="flex items-center gap-1">
-                  {/* Edit Meeting Metadata Button */}
-                  <button
-                    type="button"
-                    onClick={() => setEditingMeeting({ ...meeting })}
-                    title="تحرير وتعديل بيانات المحضر"
-                    className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition cursor-pointer"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
+                  {currentUser?.role !== 'regular' && (
+                    <>
+                      {/* Edit Meeting Metadata Button */}
+                      <button
+                        type="button"
+                        onClick={() => setEditingMeeting({ ...meeting })}
+                        title="تحرير وتعديل بيانات المحضر"
+                        className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition cursor-pointer"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
 
-                  {/* Clone Meeting */}
-                  <button
-                    type="button"
-                    onClick={() => onCloneMeeting(meeting.id)}
-                    title="تكرار المحضر كنموذج جديد"
-                    className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-md transition cursor-pointer"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
+                      {/* Clone Meeting */}
+                      <button
+                        type="button"
+                        onClick={() => onCloneMeeting(meeting.id)}
+                        title="تكرار المحضر كنموذج جديد"
+                        className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-50 rounded-md transition cursor-pointer"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
 
-                  {/* Delete Meeting */}
-                  <button
-                    type="button"
-                    onClick={() => setMeetingToDelete(meeting)}
-                    title="حذف هذا المحضر من الأرشيف"
-                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {/* Export Word */}
+                  {onExportWord && (
+                    <button
+                      type="button"
+                      onClick={() => onExportWord(meeting)}
+                      title="تصدير إلى Word (.docx)"
+                      className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition cursor-pointer relative"
+                    >
+                      <div className="relative flex items-center justify-center">
+                        <FileText className="w-4 h-4 text-blue-600" />
+                        <span className="absolute -bottom-1 -right-1 text-[6px] font-black bg-blue-600 text-white rounded-[1.5px] px-0.5 leading-none">
+                          W
+                        </span>
+                      </div>
+                    </button>
+                  )}
+
+                  {currentUser?.role !== 'regular' && (
+                    /* Delete Meeting */
+                    <button
+                      type="button"
+                      onClick={() => setMeetingToDelete(meeting)}
+                      title="حذف هذا المحضر من الأرشيف"
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -572,6 +676,90 @@ export const ArchiveScreen: React.FC<ArchiveScreenProps> = ({
               >
                 <Trash2 className="w-4 h-4" />
                 <span>نعم، حذف نهائي</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MISSING SIGNATURES WARNING ALERT MODAL */}
+      {archiveAlert && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs no-print">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-amber-200 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 text-amber-600 mb-3">
+              <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200">
+                <ShieldAlert className="w-7 h-7 text-amber-600" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900">
+                {archiveAlert.title}
+              </h3>
+            </div>
+
+            <p className="text-xs md:text-sm text-slate-700 leading-relaxed mb-4">
+              {archiveAlert.message}
+            </p>
+
+            {archiveAlert.missingRoles && archiveAlert.missingRoles.length > 0 && (
+              <div className="bg-amber-50/80 p-3 rounded-xl border border-amber-200 mb-5">
+                <div className="text-xs font-bold text-amber-900 mb-1">
+                  التواقيع المطلوبة الناقصة:
+                </div>
+                <ul className="space-y-1">
+                  {archiveAlert.missingRoles.map((role, idx) => (
+                    <li key={idx} className="text-xs font-semibold text-amber-800 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      <span>توقيع {role} (غير مكتمل)</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setArchiveAlert(null)}
+                className="w-full sm:w-auto px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
+              >
+                حسناً، فهمت
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* APPROVAL CONFIRMATION MODAL */}
+      {approvalConfirm && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs no-print">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-emerald-200 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 text-emerald-600 mb-3">
+              <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200">
+                <CheckCircle2 className="w-7 h-7 text-emerald-600" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900">
+                {approvalConfirm.title}
+              </h3>
+            </div>
+
+            <p className="text-xs md:text-sm text-slate-700 leading-relaxed mb-5">
+              {approvalConfirm.message}
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setApprovalConfirm(null)}
+                className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                onClick={approvalConfirm.onConfirm}
+                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>نعم، تأكيد الاعتماد النهائي</span>
               </button>
             </div>
           </div>

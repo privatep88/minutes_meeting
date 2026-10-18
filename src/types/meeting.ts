@@ -7,6 +7,7 @@ export interface Attendee {
 
 export interface AgendaItem {
   id: string;
+  itemNumber?: string;
   topic: string;
   recommendation: string;
   responsible: string;
@@ -26,6 +27,7 @@ export interface SignatureBlock {
   name: string;
   sigImage: string | null;
   signedAt?: string;
+  scale?: number;
 }
 
 export interface MeetingMinute {
@@ -67,3 +69,15 @@ export interface MeetingTemplate {
 }
 
 export type ActiveScreen = 'editor' | 'archive' | 'action_items' | 'attendees_dir' | 'templates';
+
+export type UserRole = 'rapporteur' | 'chairman' | 'regular';
+
+export interface SystemUser {
+  id: string;
+  name: string;
+  jobTitle: string;
+  role: UserRole;
+  roleTitle: string;
+  badgeColor: string;
+  permissionType?: 'full' | 'limited';
+}

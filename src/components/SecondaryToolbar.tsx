@@ -1,17 +1,25 @@
 import React, { useRef } from 'react';
-import { Info, Image, CheckSquare, Sparkles, Hash } from 'lucide-react';
+import { Info, Image, CheckSquare, Sparkles, Hash, FolderPlus, RotateCcw, FileText } from 'lucide-react';
 import { MeetingMinute } from '../types/meeting';
 
 interface SecondaryToolbarProps {
   meeting: MeetingMinute;
   onUpdateMeeting: (updated: MeetingMinute) => void;
+  onRequestStatusChange?: (status: MeetingMinute['status']) => void;
   isEditMode: boolean;
+  onOpenAddSection?: () => void;
+  onResetTemplate?: () => void;
+  onExportWord?: () => void;
 }
 
 export const SecondaryToolbar: React.FC<SecondaryToolbarProps> = ({
   meeting,
   onUpdateMeeting,
+  onRequestStatusChange,
   isEditMode,
+  onOpenAddSection,
+  onResetTemplate,
+  onExportWord,
 }) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -43,11 +51,15 @@ export const SecondaryToolbar: React.FC<SecondaryToolbarProps> = ({
   };
 
   const handleStatusChange = (status: MeetingMinute['status']) => {
-    onUpdateMeeting({
-      ...meeting,
-      status,
-      updatedAt: new Date().toISOString(),
-    });
+    if (onRequestStatusChange) {
+      onRequestStatusChange(status);
+    } else {
+      onUpdateMeeting({
+        ...meeting,
+        status,
+        updatedAt: new Date().toISOString(),
+      });
+    }
   };
 
   return (
@@ -75,6 +87,45 @@ export const SecondaryToolbar: React.FC<SecondaryToolbarProps> = ({
             <span className="font-medium">ترقيم تسلسلي مستمر عبر جميع الأقسام</span>
           </label>
 
+          {/* Meeting Number & Count Manual Control */}
+          <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
+            <Hash className="w-3.5 h-3.5 text-blue-600" />
+            <span className="text-slate-700 font-semibold">رقم المحضر (العدد):</span>
+            <input
+              type="text"
+              value={meeting.meetingNum}
+              onChange={(e) => {
+                const val = e.target.value;
+                onUpdateMeeting({
+                  ...meeting,
+                  meetingNum: val,
+                  title: `محضر اجتماع رقم ( ${val} ) لسنة ${meeting.meetingYear}`,
+                  updatedAt: new Date().toISOString(),
+                });
+              }}
+              className="w-12 text-center font-mono font-extrabold bg-white border border-slate-300 rounded px-1 py-0.5 text-blue-900 focus:ring-1 focus:ring-blue-500 text-xs shadow-2xs"
+              title="تعديل رقم المحضر والعدد يدوياً"
+              placeholder="01"
+            />
+            <span className="text-slate-500 font-semibold">لسنة:</span>
+            <input
+              type="text"
+              value={meeting.meetingYear}
+              onChange={(e) => {
+                const val = e.target.value;
+                onUpdateMeeting({
+                  ...meeting,
+                  meetingYear: val,
+                  title: `محضر اجتماع رقم ( ${meeting.meetingNum} ) لسنة ${val}`,
+                  updatedAt: new Date().toISOString(),
+                });
+              }}
+              className="w-16 text-center font-mono font-bold bg-white border border-slate-300 rounded px-1 py-0.5 text-slate-800 focus:ring-1 focus:ring-blue-500 text-xs shadow-2xs"
+              title="تعديل سنة المحضر يدوياً"
+              placeholder="2026"
+            />
+          </div>
+
           {/* Meeting Status Selector */}
           <div className="flex items-center gap-1.5">
             <span className="text-slate-500">حالة المحضر:</span>
@@ -89,6 +140,18 @@ export const SecondaryToolbar: React.FC<SecondaryToolbarProps> = ({
             </select>
           </div>
 
+          {/* Add Section button */}
+          {onOpenAddSection && (
+            <button
+              type="button"
+              onClick={onOpenAddSection}
+              className="text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded flex items-center gap-1 font-semibold transition cursor-pointer text-xs"
+            >
+              <FolderPlus className="w-3.5 h-3.5" />
+              <span>إضافة قسم جديد</span>
+            </button>
+          )}
+
           {/* Logo upload button */}
           <button
             type="button"
@@ -98,6 +161,37 @@ export const SecondaryToolbar: React.FC<SecondaryToolbarProps> = ({
             <Image className="w-3.5 h-3.5" />
             <span>تغيير الشعار</span>
           </button>
+
+          {/* Export Word button */}
+          {onExportWord && (
+            <button
+              type="button"
+              onClick={onExportWord}
+              className="p-1.5 rounded text-slate-500 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 transition cursor-pointer relative group"
+              title="تصدير محضر الاجتماع بصيغة Word (.docx) بجميع عناصره وتنسيقاته"
+              aria-label="تصدير إلى Word"
+            >
+              <div className="relative flex items-center justify-center">
+                <FileText className="w-4 h-4 text-blue-600" />
+                <span className="absolute -bottom-1 -right-1 text-[6.5px] font-black bg-blue-600 text-white rounded-[1.5px] px-0.5 leading-none">
+                  W
+                </span>
+              </div>
+            </button>
+          )}
+
+          {/* Restore Template button */}
+          {onResetTemplate && (
+            <button
+              type="button"
+              onClick={onResetTemplate}
+              className="p-1.5 rounded text-slate-500 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 transition cursor-pointer"
+              title="استعادة النموذج الأصلي"
+              aria-label="استعادة النموذج الأصلي"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+          )}
           <input
             type="file"
             ref={fileInputRef}

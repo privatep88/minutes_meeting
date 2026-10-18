@@ -10,9 +10,23 @@
   font-family: 'Noto Naskh Arabic', 'Cairo', serif;
 }
 
+/* Header font matching previous default (Cairo) */
+.header-font,
+header,
+header button,
+header select,
+header option,
+header span,
+header h1,
+header p,
+header nav {
+  font-family: 'Cairo', system-ui, -apple-system, sans-serif !important;
+}
+
 /* A4 Sheet styling for screen simulation */
 .a4-page {
   width: 210mm;
+  max-width: 100%;
   min-height: 297mm;
   padding: 12mm 15mm;
   margin: 1.5rem auto;
@@ -20,6 +34,15 @@
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   position: relative;
   box-sizing: border-box;
+}
+
+@media screen and (max-width: 768px) {
+  .a4-page {
+    width: 100% !important;
+    padding: 10px 8px !important;
+    margin: 0.5rem auto !important;
+    border-radius: 8px;
+  }
 }
 
 /* Crisp official table borders matching SAAED document */
@@ -57,17 +80,24 @@
     size: A4 portrait;
     margin: 8mm 10mm;
   }
-  body {
+  html, body {
     background: white !important;
     padding: 0 !important;
     margin: 0 !important;
+    width: 100% !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
-  .no-print {
+  .no-print,
+  header.no-print,
+  div.no-print,
+  button.no-print {
     display: none !important;
   }
   .a4-page {
     width: 100% !important;
-    min-height: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
     box-shadow: none !important;
@@ -85,5 +115,10 @@
   }
   thead {
     display: table-header-group;
+  }
+  [contenteditable] {
+    outline: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
   }
 }

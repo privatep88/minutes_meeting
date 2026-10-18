@@ -207,7 +207,7 @@ export const DirectoryScreen: React.FC<DirectoryScreenProps> = ({
 
           {/* Centered Table View */}
           {viewMode === 'table' ? (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-x-auto">
               <table className="w-full text-center text-xs md:text-sm">
                 <thead className="bg-[#85b8db] text-black font-bold">
                   <tr>

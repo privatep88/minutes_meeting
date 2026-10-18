@@ -8,16 +8,18 @@ import {
   User,
   Filter,
 } from 'lucide-react';
-import { MeetingMinute, AgendaItem } from '../types/meeting';
+import { MeetingMinute, AgendaItem, SystemUser } from '../types/meeting';
 
 interface ActionItemsScreenProps {
   meeting: MeetingMinute;
+  currentUser?: SystemUser;
   onUpdateMeeting: (updated: MeetingMinute) => void;
   onGoToEditor: () => void;
 }
 
 export const ActionItemsScreen: React.FC<ActionItemsScreenProps> = ({
   meeting,
+  currentUser,
   onUpdateMeeting,
   onGoToEditor,
 }) => {
@@ -148,7 +150,7 @@ export const ActionItemsScreen: React.FC<ActionItemsScreenProps> = ({
       </div>
 
       {/* Action Items Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-x-auto">
         {filtered.length === 0 ? (
           <div className="text-center py-12 text-slate-400 text-xs">
             لا توجد بنود تطابق معايير البحث الحالية. يمكنك كتابة بنود في المحضر أو إضافة بند سريع.
@@ -195,24 +197,40 @@ export const ActionItemsScreen: React.FC<ActionItemsScreenProps> = ({
                     </div>
                   </td>
                   <td className="py-3 px-4 text-center">
-                    <select
-                      value={item.status || 'جديد'}
-                      onChange={(e) => updateItemStatus(sectionId, item.id, e.target.value as any)}
-                      className={`text-xs font-semibold rounded-lg px-2.5 py-1 border focus:ring-1 focus:ring-blue-500 cursor-pointer ${
-                        item.status === 'مكتمل'
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : item.status === 'قيد الإجراء'
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : item.status === 'متأخر'
-                          ? 'bg-rose-50 text-rose-700 border-rose-200'
-                          : 'bg-slate-50 text-slate-700 border-slate-200'
-                      }`}
-                    >
-                      <option value="جديد">جديد</option>
-                      <option value="قيد الإجراء">قيد الإجراء</option>
-                      <option value="مكتمل">مكتمل</option>
-                      <option value="متأخر">متأخر</option>
-                    </select>
+                    {currentUser?.role === 'regular' ? (
+                      <span
+                        className={`text-xs font-semibold rounded-lg px-2.5 py-1 border inline-block ${
+                          item.status === 'مكتمل'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : item.status === 'قيد الإجراء'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : item.status === 'متأخر'
+                            ? 'bg-rose-50 text-rose-700 border-rose-200'
+                            : 'bg-slate-50 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        {item.status || 'جديد'}
+                      </span>
+                    ) : (
+                      <select
+                        value={item.status || 'جديد'}
+                        onChange={(e) => updateItemStatus(sectionId, item.id, e.target.value as any)}
+                        className={`text-xs font-semibold rounded-lg px-2.5 py-1 border focus:ring-1 focus:ring-blue-500 cursor-pointer ${
+                          item.status === 'مكتمل'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : item.status === 'قيد الإجراء'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : item.status === 'متأخر'
+                            ? 'bg-rose-50 text-rose-700 border-rose-200'
+                            : 'bg-slate-50 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        <option value="جديد">جديد</option>
+                        <option value="قيد الإجراء">قيد الإجراء</option>
+                        <option value="مكتمل">مكتمل</option>
+                        <option value="متأخر">متأخر</option>
+                      </select>
+                    )}
                   </td>
                 </tr>
               ))}
