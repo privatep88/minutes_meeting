@@ -754,7 +754,8 @@ export default function App() {
       setActiveScreen('editor');
     }
     setIsEditMode(false);
-    showToast('جاري تحضير المحضر للطباعة بنمط A4 المعتمد...');
+    // Do not show preparing print message; clear any active toast immediately
+    setToastMessage(null);
 
     // Wait for document to mount in preview mode
     await new Promise((resolve) => setTimeout(resolve, 300));
@@ -1079,7 +1080,7 @@ export default function App() {
 
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-5 left-5 z-50 bg-slate-900 text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-lg shadow-xl flex items-center gap-2 border border-slate-700">
+        <div className="fixed bottom-5 left-5 z-50 bg-slate-900 text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-lg shadow-xl flex items-center gap-2 border border-slate-700 no-print print:hidden pointer-events-none">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           <span>{toastMessage}</span>
         </div>

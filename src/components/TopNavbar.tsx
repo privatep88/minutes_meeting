@@ -7,7 +7,6 @@ import {
   PenTool,
   RotateCcw,
   Printer,
-  Download,
   Archive,
   CheckSquare,
   Users,
@@ -37,7 +36,7 @@ interface TopNavbarProps {
   onResetTemplate: () => void;
   onExportWord: () => void;
   onExportCSV?: () => void;
-  onExportPDF: () => void;
+  onExportPDF?: () => void;
   onPrint: () => void;
   saveStatus: 'saved' | 'saving';
   onOpenUsersManagement?: () => void;
@@ -338,6 +337,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
               </button>
 
               {/* Print A4 */}
+              {/* Print A4 */}
               <button
                 type="button"
                 onClick={onPrint}
@@ -346,17 +346,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
               >
                 <Printer className="w-4 h-4" />
                 <span>طباعة A4</span>
-              </button>
-
-              {/* Export PDF */}
-              <button
-                type="button"
-                onClick={onExportPDF}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white shadow-md shadow-indigo-600/20 transition cursor-pointer"
-                title="تصدير المحضر إلى ملف PDF رسمي عالي الدقة"
-              >
-                <Download className="w-4 h-4" />
-                <span>تصدير PDF</span>
               </button>
             </>
           )}
@@ -385,14 +374,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                   title="طباعة A4"
                 >
                   <Printer className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={onExportPDF}
-                  className="p-2 rounded-lg bg-indigo-600 text-white text-xs font-bold transition"
-                  title="تصدير PDF"
-                >
-                  <Download className="w-4 h-4" />
                 </button>
               </div>
             )}
@@ -584,22 +565,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    onExportPDF();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex items-center justify-center gap-1.5 p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>تصدير PDF</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
                     onPrint();
                     setMobileMenuOpen(false);
                   }}
-                  className="col-span-2 flex items-center justify-center gap-1.5 p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold"
+                  className="flex items-center justify-center gap-1.5 p-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold"
                 >
                   <Printer className="w-4 h-4" />
                   <span>طباعة A4 معتمدة</span>
