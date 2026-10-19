@@ -74,48 +74,131 @@ header nav {
   box-shadow: inset 0 0 0 1.5px #2563eb;
 }
 
-/* Custom Print Rules for exact A4 reproduction */
+/* Custom Print Rules for exact A4 reproduction matching the official meeting minutes */
 @media print {
   @page {
     size: A4 portrait;
     margin: 8mm 10mm;
   }
+
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
   html, body {
-    background: white !important;
+    background: #ffffff !important;
     padding: 0 !important;
     margin: 0 !important;
     width: 100% !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    font-family: 'Cairo', 'Noto Naskh Arabic', sans-serif !important;
+    direction: rtl !important;
   }
+
+  #root,
+  #root > div,
+  main {
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  /* Hide everything not part of the official printable document */
   .no-print,
   header.no-print,
   div.no-print,
-  button.no-print {
+  button.no-print,
+  nav.no-print,
+  .toast-container,
+  [role="dialog"] {
     display: none !important;
   }
+
+  /* Printable Document Container */
+  #printableDocument,
   .a4-page {
     width: 100% !important;
     max-width: 100% !important;
     min-height: auto !important;
-    margin: 0 !important;
+    margin: 0 auto !important;
     padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
+    background: #ffffff !important;
+    overflow: visible !important;
   }
-  .page-break {
-    page-break-before: always;
+
+  /* Crisp official table borders matching SAAED document */
+  .table-official {
+    width: 100% !important;
+    border: 1.5px solid #000000 !important;
+    border-collapse: collapse !important;
+    margin-bottom: 12px !important;
   }
-  table {
-    page-break-inside: auto;
+
+  .table-official th,
+  .table-official td {
+    border: 1px solid #000000 !important;
+    font-size: 11px !important;
+    padding: 5px 6px !important;
   }
+
+  /* Navy divider banner in print */
+  .table-official tr.bg-\[\#0c2a59\],
+  tr[class*="0c2a59"] {
+    background-color: #0c2a59 !important;
+    color: #ffffff !important;
+  }
+
+  tr[class*="0c2a59"] td,
+  tr[class*="0c2a59"] div {
+    color: #ffffff !important;
+  }
+
+  /* Table headers blue background in print */
+  .table-official thead,
+  thead[class*="85b8db"],
+  th[class*="85b8db"],
+  th[class*="72a6cc"],
+  .bg-\[\#85b8db\] {
+    background-color: #85b8db !important;
+    color: #1e293b !important;
+  }
+
+  /* Alternating rows */
+  tr[class*="f8fafc"] {
+    background-color: #f8fafc !important;
+  }
+
+  /* Page break rules for clean multi-page document */
   tr {
-    page-break-inside: avoid;
-    page-break-after: auto;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
+
   thead {
-    display: table-header-group;
+    display: table-header-group !important;
   }
+
+  tfoot {
+    display: table-footer-group !important;
+  }
+
+  .signature-block,
+  .signature-card {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
   [contenteditable] {
     outline: none !important;
     background: transparent !important;

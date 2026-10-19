@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Info, Image, CheckSquare, Sparkles, Hash, FolderPlus, RotateCcw, FileText } from 'lucide-react';
 import { MeetingMinute } from '../types/meeting';
+import { renumberSections } from '../utils/numbering';
 
 interface SecondaryToolbarProps {
   meeting: MeetingMinute;
@@ -43,9 +44,11 @@ export const SecondaryToolbar: React.FC<SecondaryToolbarProps> = ({
   };
 
   const toggleContinuous = (checked: boolean) => {
+    const renumbered = renumberSections(meeting.sections, checked);
     onUpdateMeeting({
       ...meeting,
       continuousNumbering: checked,
+      sections: renumbered,
       updatedAt: new Date().toISOString(),
     });
   };
@@ -86,6 +89,24 @@ export const SecondaryToolbar: React.FC<SecondaryToolbarProps> = ({
             />
             <span className="font-medium">ترقيم تسلسلي مستمر عبر جميع الأقسام</span>
           </label>
+
+          {/* Quick Renumber Button */}
+          <button
+            type="button"
+            onClick={() => {
+              const renumbered = renumberSections(meeting.sections, meeting.continuousNumbering);
+              onUpdateMeeting({
+                ...meeting,
+                sections: renumbered,
+                updatedAt: new Date().toISOString(),
+              });
+            }}
+            title="إعادة الترقيم المتسلسل لكافة البنود في الجدول تلقائياً"
+            className="flex items-center gap-1 bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-300 rounded px-2 py-0.5 font-medium transition cursor-pointer"
+          >
+            <Hash className="w-3 h-3 text-blue-600" />
+            <span>إعادة الترقيم</span>
+          </button>
 
           {/* Meeting Number & Count Manual Control */}
           <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-0.5 rounded-lg border border-slate-200 shadow-2xs">

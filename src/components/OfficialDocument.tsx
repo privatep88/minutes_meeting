@@ -14,9 +14,14 @@ import {
   Table as TableIcon,
   AlignJustify,
   PenTool,
+  Hash,
 } from 'lucide-react';
 import { MeetingMinute, Attendee, AgendaSection, AgendaItem, SignatureBlock } from '../types/meeting';
 import { OFFICIAL_SAAED_LOGO } from '../data/defaultData';
+import { renumberSections, isExcludedFromCenter } from '../utils/numbering';
+import {
+  savePermanentCompletedItem,
+} from '../utils/permanentActionItems';
 
 interface OfficialDocumentProps {
   meeting: MeetingMinute;
@@ -143,36 +148,83 @@ export const OfficialDocument: React.FC<OfficialDocumentProps> = ({
     setDeleteConfirm({
       title: 'تأكيد حذف القسم بالكامل',
       itemName: secName,
-      message: `هل أنت متأكد من رغبتك في حذف هذا القسم وجميع بنود القرارات (${sec.items.length} بنود) المدرجة تحته بشكل نهائي؟`,
+      message: `هل أنت متأكد من رغبتك في حذف هذا القسم وجميع بنود القرارات (${sec.items.length} بنود) المدرجة تحته بشكل نهائي؟ سيتم حذف توصياته غير المذكورة في محاضر أخرى من سجل التكليفات تلقائياً وإعادة الترقيم المتسلسل لبقية البنود.`,
       confirmText: 'نعم، حذف القسم',
       onConfirm: () => {
-        updateField(
-          'sections',
-          meeting.sections.filter((s) => s.id !== sec.id)
-        );
+        const remainingSections = meeting.sections.filter((s) => s.id !== sec.id);
+        const renumbered = renumberSections(remainingSections, meeting.continuousNumbering);
+        updateField('sections', renumbered);
       },
     });
   };
 
   const updateItem = (secId: string, itemId: string, field: keyof AgendaItem, val: string) => {
+    const targetSec = meeting.sections.find((s) => s.id === secId);
     const updated = meeting.sections.map((sec) => {
       if (sec.id !== secId) return sec;
       return {
         ...sec,
-        items: sec.items.map((item) =>
-          item.id === itemId ? { ...item, [field]: val } : item
-        ),
+        items: sec.items.map((item) => {
+          if (item.id !== itemId) return item;
+          if (field === 'date') {
+            const isCompleted = val.includes('تم التنفيذ') || val.includes('مكتمل');
+            const updatedItem: AgendaItem = {
+              ...item,
+              date: val,
+              ...(isCompleted ? { status: 'مكتمل' as const } : {}),
+            };
+            if (isCompleted) {
+              savePermanentCompletedItem({
+                id: item.id,
+                meetingId: meeting.id,
+                meetingNum: meeting.meetingNum || '01',
+                meetingYear: meeting.meetingYear || '',
+                meetingDate: meeting.meetingDate || '',
+                meetingTitle: meeting.title || `محضر اجتماع رقم (${meeting.meetingNum || '01'})`,
+                sectionId: sec.id,
+                sectionTitle: sec.title ? sec.title.replace(':', '').trim() : 'البنود الرئيسية الأولى',
+                itemNumber: item.itemNumber || '',
+                topic: item.topic,
+                recommendation: item.recommendation,
+                responsible: item.responsible,
+                date: val,
+                status: 'مكتمل',
+                completedAt: new Date().toISOString(),
+                isPreservedAfterMeetingDeletion: false,
+              });
+            }
+            return updatedItem;
+          }
+          if (field === 'status' && val === 'مكتمل') {
+            savePermanentCompletedItem({
+              id: item.id,
+              meetingId: meeting.id,
+              meetingNum: meeting.meetingNum || '01',
+              meetingYear: meeting.meetingYear || '',
+              meetingDate: meeting.meetingDate || '',
+              meetingTitle: meeting.title || `محضر اجتماع رقم (${meeting.meetingNum || '01'})`,
+              sectionId: sec.id,
+              sectionTitle: sec.title ? sec.title.replace(':', '').trim() : 'البنود الرئيسية الأولى',
+              itemNumber: item.itemNumber || '',
+              topic: item.topic,
+              recommendation: item.recommendation,
+              responsible: item.responsible,
+              date: item.date || 'تم التنفيذ',
+              status: 'مكتمل',
+              completedAt: new Date().toISOString(),
+              isPreservedAfterMeetingDeletion: false,
+            });
+          }
+          return { ...item, [field]: val };
+        }),
       };
     });
     updateField('sections', updated);
   };
 
   const addItemToSection = (secId: string) => {
-    const targetSec = meeting.sections.find((s) => s.id === secId);
-    const count = (targetSec?.items.length || 0) + 1;
     const newItem: AgendaItem = {
       id: `itm-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      itemNumber: String(count).padStart(2, '0'),
       topic: '',
       recommendation: '',
       responsible: '',
@@ -182,7 +234,8 @@ export const OfficialDocument: React.FC<OfficialDocumentProps> = ({
     const updated = meeting.sections.map((sec) =>
       sec.id === secId ? { ...sec, items: [...sec.items, newItem] } : sec
     );
-    updateField('sections', updated);
+    const renumbered = renumberSections(updated, meeting.continuousNumbering);
+    updateField('sections', renumbered);
   };
 
   const duplicateItem = (secId: string, itemId: string) => {
@@ -199,7 +252,25 @@ export const OfficialDocument: React.FC<OfficialDocumentProps> = ({
       items.splice(idx + 1, 0, clone);
       return { ...sec, items };
     });
-    updateField('sections', updated);
+    const renumbered = renumberSections(updated, meeting.continuousNumbering);
+    updateField('sections', renumbered);
+  };
+
+  const moveItem = (secId: string, index: number, direction: 'up' | 'down') => {
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    const targetSec = meeting.sections.find((s) => s.id === secId);
+    if (!targetSec || targetIdx < 0 || targetIdx >= targetSec.items.length) return;
+
+    const updated = meeting.sections.map((sec) => {
+      if (sec.id !== secId) return sec;
+      const newItems = [...sec.items];
+      const temp = newItems[index];
+      newItems[index] = newItems[targetIdx];
+      newItems[targetIdx] = temp;
+      return { ...sec, items: newItems };
+    });
+    const renumbered = renumberSections(updated, meeting.continuousNumbering);
+    updateField('sections', renumbered);
   };
 
   const requestDeleteItem = (secId: string, item: AgendaItem, index: number) => {
@@ -207,7 +278,7 @@ export const OfficialDocument: React.FC<OfficialDocumentProps> = ({
     setDeleteConfirm({
       title: 'تأكيد حذف البند',
       itemName: itemTopic,
-      message: 'هل تريد بالتأكيد حذف هذا البند وتوصياته من جدول القرارات؟ لا يمكن التراجع عن هذه الخطوة بعد الحفظ.',
+      message: 'هل تريد بالتأكيد حذف هذا البند وتوصياته من جدول القرارات؟ سيتم حذفه من سجل التكليفات ما لم يكن مذكوراً في محضر آخر، وإعادة الترقيم المتسلسل لكافة البنود تلقائياً.',
       confirmText: 'نعم، حذف البند',
       onConfirm: () => {
         const updated = meeting.sections.map((sec) => {
@@ -217,7 +288,8 @@ export const OfficialDocument: React.FC<OfficialDocumentProps> = ({
             items: sec.items.filter((it) => it.id !== item.id),
           };
         });
-        updateField('sections', updated);
+        const renumbered = renumberSections(updated, meeting.continuousNumbering);
+        updateField('sections', renumbered);
       },
     });
   };
@@ -230,7 +302,8 @@ export const OfficialDocument: React.FC<OfficialDocumentProps> = ({
         items: sec.items.filter((item) => item.id !== itemId),
       };
     });
-    updateField('sections', updated);
+    const renumbered = renumberSections(updated, meeting.continuousNumbering);
+    updateField('sections', renumbered);
   };
 
   // Signatures
@@ -602,19 +675,34 @@ export const OfficialDocument: React.FC<OfficialDocumentProps> = ({
       {/* 4. AGENDA & OUTCOMES TABLE (مدخلات ونتائج الاجتماع مفصلة أدناه) */}
       <section className="mb-8">
         {/* Banner with light blue color */}
-        <div className="w-full bg-[#85b8db] text-slate-900 font-bold px-3 py-1.5 text-sm md:text-base border border-b-0 border-black rounded-t-xs flex items-center justify-between">
-          <span className="w-full text-center font-bold">مدخلات ونتائج الاجتماع مفصلة أدناه:</span>
+        <div className="w-full bg-[#85b8db] text-slate-900 font-bold px-3 py-1.5 text-sm md:text-base border border-b-0 border-black rounded-t-xs flex items-center justify-between flex-wrap gap-2">
+          <span className="font-bold flex-1 text-center md:text-right">مدخلات ونتائج الاجتماع مفصلة أدناه:</span>
 
           {isEditMode && (
-            <button
-              type="button"
-              onClick={onOpenAddSection}
-              className="no-print text-xs bg-white hover:bg-slate-100 text-slate-800 px-3 py-1 rounded shadow-xs border border-slate-300 font-sans font-bold flex items-center gap-1.5 transition cursor-pointer shrink-0"
-              title="إضافة قسم جديد في جدول القرارات"
-            >
-              <FolderPlus className="w-3.5 h-3.5 text-blue-700" />
-              <span>إضافة قسم جديد</span>
-            </button>
+            <div className="no-print flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const renumbered = renumberSections(meeting.sections, meeting.continuousNumbering);
+                  updateField('sections', renumbered);
+                }}
+                className="text-xs bg-white hover:bg-slate-100 text-slate-800 px-2.5 py-1 rounded shadow-xs border border-slate-300 font-sans font-semibold flex items-center gap-1 transition cursor-pointer shrink-0"
+                title="إعادة الترقيم المتسلسل لكافة البنود فوراً"
+              >
+                <Hash className="w-3.5 h-3.5 text-blue-700" />
+                <span>إعادة ترقيم البنود</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onOpenAddSection}
+                className="text-xs bg-white hover:bg-slate-100 text-slate-800 px-3 py-1 rounded shadow-xs border border-slate-300 font-sans font-bold flex items-center gap-1.5 transition cursor-pointer shrink-0"
+                title="إضافة قسم جديد في جدول القرارات"
+              >
+                <FolderPlus className="w-3.5 h-3.5 text-blue-700" />
+                <span>إضافة قسم جديد</span>
+              </button>
+            </div>
           )}
         </div>
 
@@ -629,32 +717,52 @@ export const OfficialDocument: React.FC<OfficialDocumentProps> = ({
                 <th className="w-[18%] py-1.5 px-2 text-center">مسؤولية التنفيذ</th>
                 <th className="w-[14%] py-1.5 px-2 text-center">تاريخ التنفيذ</th>
                 {isEditMode && (
-                  <th className="w-14 py-1 px-1 no-print bg-[#72a6cc] text-center">تحكم</th>
+                  <th className="w-24 py-1 px-1 no-print bg-[#72a6cc] text-center">تحكم</th>
                 )}
               </tr>
             </thead>
             <tbody>
+              {(() => {
+                continuousCounter = 1;
+                return null;
+              })()}
               {meeting.sections.map((section) => (
                 <React.Fragment key={section.id}>
-                  {/* Optional dark navy section divider banner */}
+                  {/* Section divider banner */}
                   {section.title && section.title.trim() !== '' && (
                     <tr className="bg-[#0c2a59] text-white font-bold">
                       <td
                         colSpan={5}
-                        className="py-1.5 px-3 text-right"
+                        className={`py-1.5 px-3 ${
+                          isExcludedFromCenter(section.title) ? 'text-right' : 'text-center'
+                        }`}
                       >
-                        <div className="flex items-center justify-between relative">
+                        <div
+                          className={`flex items-center relative ${
+                            isExcludedFromCenter(section.title) ? 'justify-between' : 'justify-center'
+                          }`}
+                        >
                           <div
                             contentEditable={isEditMode}
                             suppressContentEditableWarning
                             onBlur={(e) => updateSectionTitle(section.id, e.currentTarget.innerText)}
-                            className="editable-cell text-sm tracking-wide text-white text-right flex-1 font-bold pr-1"
+                            className={`editable-cell text-sm tracking-wide text-white font-bold ${
+                              isExcludedFromCenter(section.title)
+                                ? 'text-right flex-1 pr-1'
+                                : 'text-center w-full px-2'
+                            }`}
                           >
                             {section.title}
                           </div>
 
                           {isEditMode && (
-                            <div className="no-print flex items-center gap-1.5 mr-2">
+                            <div
+                              className={`no-print flex items-center gap-1.5 ${
+                                isExcludedFromCenter(section.title)
+                                  ? 'mr-2'
+                                  : 'absolute left-2 top-1/2 -translate-y-1/2'
+                              }`}
+                            >
                               <button
                                 type="button"
                                 onClick={() => addItemToSection(section.id)}
@@ -717,49 +825,73 @@ export const OfficialDocument: React.FC<OfficialDocumentProps> = ({
                             {rowNumber}
                           </div>
                         </td>
-                        <td className="py-2 px-2.5 text-center align-top">
+                        <td className={`py-2 px-2.5 align-top ${isExcludedFromCenter(item.topic) ? 'text-right' : 'text-center'}`}>
                           <div
                             contentEditable={isEditMode}
                             suppressContentEditableWarning
                             onBlur={(e) => updateItem(section.id, item.id, 'topic', e.currentTarget.innerText)}
-                            className="editable-cell text-slate-900 leading-relaxed min-h-[24px] text-center"
+                            className={`editable-cell text-slate-900 leading-relaxed min-h-[24px] ${
+                              isExcludedFromCenter(item.topic) ? 'text-right' : 'text-center'
+                            }`}
                           >
                             {item.topic}
                           </div>
                         </td>
-                        <td className="py-2 px-2.5 text-center align-top">
+                        <td className={`py-2 px-2.5 align-top ${isExcludedFromCenter(item.recommendation) ? 'text-right' : 'text-center'}`}>
                           <div
                             contentEditable={isEditMode}
                             suppressContentEditableWarning
                             onBlur={(e) => updateItem(section.id, item.id, 'recommendation', e.currentTarget.innerText)}
-                            className="editable-cell text-slate-800 leading-relaxed min-h-[24px] text-center"
+                            className={`editable-cell text-slate-800 leading-relaxed min-h-[24px] ${
+                              isExcludedFromCenter(item.recommendation) ? 'text-right' : 'text-center'
+                            }`}
                           >
                             {item.recommendation}
                           </div>
                         </td>
-                        <td className="py-2 px-2 text-center align-middle">
+                        <td className={`py-2 px-2 align-middle ${isExcludedFromCenter(item.responsible) ? 'text-right' : 'text-center'}`}>
                           <div
                             contentEditable={isEditMode}
                             suppressContentEditableWarning
                             onBlur={(e) => updateItem(section.id, item.id, 'responsible', e.currentTarget.innerText)}
-                            className="editable-cell text-slate-800 min-h-[24px] text-center"
+                            className={`editable-cell text-slate-800 min-h-[24px] ${
+                              isExcludedFromCenter(item.responsible) ? 'text-right' : 'text-center'
+                            }`}
                           >
                             {item.responsible}
                           </div>
                         </td>
                         <td className="py-2 px-2 text-center align-middle font-sans text-xs">
-                          <div
-                            contentEditable={isEditMode}
-                            suppressContentEditableWarning
-                            onBlur={(e) => updateItem(section.id, item.id, 'date', e.currentTarget.innerText)}
-                            className="editable-cell text-slate-700 min-h-[24px] text-center"
-                          >
-                            {item.date}
-                          </div>
+                          {item.status === 'مكتمل' || item.date?.includes('تم التنفيذ') ? (
+                            <div className="flex flex-col items-center justify-center gap-1">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-2xs">
+                                <span>✓ تم التنفيذ</span>
+                              </span>
+                              <div
+                                contentEditable={isEditMode}
+                                suppressContentEditableWarning
+                                onBlur={(e) => updateItem(section.id, item.id, 'date', e.currentTarget.innerText.trim())}
+                                className="editable-cell text-emerald-800 font-semibold min-h-[18px] text-center"
+                                title={isEditMode ? 'انقر لتعديل تاريخ التنفيذ' : undefined}
+                              >
+                                {item.date?.replace(/^[✓\s]*تم التنفيذ[\s:(-]*/, '').replace(/\)$/, '') || item.date}
+                              </div>
+                            </div>
+                          ) : (
+                            <div
+                              contentEditable={isEditMode}
+                              suppressContentEditableWarning
+                              onBlur={(e) => updateItem(section.id, item.id, 'date', e.currentTarget.innerText.trim())}
+                              className="editable-cell text-slate-700 min-h-[24px] text-center"
+                              title={isEditMode ? 'انقر لكتابة تاريخ التنفيذ' : undefined}
+                            >
+                              {item.date}
+                            </div>
+                          )}
                         </td>
                         {isEditMode && (
                           <td className="text-center py-1.5 px-1 align-middle no-print">
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-center gap-0.5">
                               <button
                                 type="button"
                                 onClick={() => duplicateItem(section.id, item.id)}
@@ -771,7 +903,7 @@ export const OfficialDocument: React.FC<OfficialDocumentProps> = ({
                               <button
                                 type="button"
                                 onClick={() => requestDeleteItem(section.id, item, itemIdx)}
-                                title="حذف البند"
+                                title="حذف البند وإعادة الترقيم المتسلسل تلقائياً"
                                 className="p-1 text-slate-400 hover:text-rose-600 transition cursor-pointer"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />

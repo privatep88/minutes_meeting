@@ -16,7 +16,7 @@ export const UnlockEditModal: React.FC<UnlockEditModalProps> = ({
   onConfirmUnlock,
 }) => {
   const [reason, setReason] = useState('');
-  const [userName, setUserName] = useState('أ. خالد احمد الجفري (مقرر الاجتماع)');
+  const [userName, setUserName] = useState('أ. خالد احمد الهاشمي (مقرر الاجتماع)');
   const [userEmail, setUserEmail] = useState('mr.aljefre@gmail.com');
   const [errorMsg, setErrorMsg] = useState('');
 

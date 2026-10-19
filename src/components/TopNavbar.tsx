@@ -247,77 +247,79 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             </span>
           </div>
 
-          {activeScreen === 'editor' && currentUser.role !== 'regular' && (
+          {activeScreen === 'editor' && (
             <>
-              <div className="h-5 w-px bg-slate-800 mx-0.5" />
+              {currentUser.role !== 'regular' && (
+                <>
+                  <div className="h-5 w-px bg-slate-800 mx-0.5" />
 
-              {/* Mode Switcher */}
-              <div className="bg-slate-900 p-1 rounded-xl flex items-center border border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (meetingStatus === 'معتمد وموقع') {
-                      if (onLockedEditAttempt) onLockedEditAttempt();
-                    } else {
-                      setIsEditMode(true);
-                    }
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                    isEditMode
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs'
-                      : meetingStatus === 'معتمد وموقع'
-                      ? 'text-slate-500 hover:text-slate-400'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                  title={
-                    meetingStatus === 'معتمد وموقع'
-                      ? 'المحضر معتمد وموقع رسمياً ولا يمكن التعديل عليه إلا من خلال أرشيف المحاضر'
-                      : 'تفعيل التعديل المباشر على المحضر'
-                  }
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>وضع التحرير</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsEditMode(false)}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                    !isEditMode
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                  title="معاينة المستند النهائية للطباعة والتصدير"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>نمط المعاينة</span>
-                </button>
-              </div>
+                  {/* Mode Switcher */}
+                  <div className="bg-slate-900 p-1 rounded-xl flex items-center border border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (meetingStatus === 'معتمد وموقع') {
+                          if (onLockedEditAttempt) onLockedEditAttempt();
+                        } else {
+                          setIsEditMode(true);
+                        }
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                        isEditMode
+                          ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs'
+                          : meetingStatus === 'معتمد وموقع'
+                          ? 'text-slate-500 hover:text-slate-400'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                      title={
+                        meetingStatus === 'معتمد وموقع'
+                          ? 'المحضر معتمد وموقع رسمياً ولا يمكن التعديل عليه إلا من خلال أرشيف المحاضر'
+                          : 'تفعيل التعديل المباشر على المحضر'
+                      }
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>وضع التحرير</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditMode(false)}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                        !isEditMode
+                          ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                      title="معاينة المستند النهائية للطباعة والتصدير"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>نمط المعاينة</span>
+                    </button>
+                  </div>
 
-              {/* Lock Indicator Badge */}
-              {meetingStatus === 'معتمد وموقع' && (
-                <div
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-950/90 text-emerald-300 border border-emerald-600/80 shadow-xs"
-                  title="المحضر معتمد وموقع رسمياً - مقفل لنمط المعاينة."
-                >
-                  <Lock className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="hidden sm:inline">معتمد وموقع</span>
-                </div>
+                  {/* Lock Indicator Badge */}
+                  {meetingStatus === 'معتمد وموقع' && (
+                    <div
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-950/90 text-emerald-300 border border-emerald-600/80 shadow-xs"
+                      title="المحضر معتمد وموقع رسمياً - مقفل لنمط المعاينة."
+                    >
+                      <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="hidden sm:inline">معتمد وموقع</span>
+                    </div>
+                  )}
+
+                  <div className="h-5 w-px bg-slate-800 mx-0.5" />
+
+                  {/* Reset to initial */}
+                  <button
+                    type="button"
+                    onClick={onResetTemplate}
+                    title="استعادة النموذج الأصلي"
+                    aria-label="استعادة النموذج الأصلي"
+                    className="p-1.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-900 border border-transparent hover:border-slate-800 transition cursor-pointer"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+                </>
               )}
-
-
-
-              <div className="h-5 w-px bg-slate-800 mx-0.5" />
-
-              {/* Reset to initial */}
-              <button
-                type="button"
-                onClick={onResetTemplate}
-                title="استعادة النموذج الأصلي"
-                aria-label="استعادة النموذج الأصلي"
-                className="p-1.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-900 border border-transparent hover:border-slate-800 transition cursor-pointer"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
 
               {/* Export Word */}
               <button
@@ -340,6 +342,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                 type="button"
                 onClick={onPrint}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white shadow-md shadow-indigo-600/20 transition cursor-pointer"
+                title="طباعة المحضر بنمط A4 الرسمي المعتمد"
               >
                 <Printer className="w-4 h-4" />
                 <span>طباعة A4</span>
@@ -350,6 +353,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                 type="button"
                 onClick={onExportPDF}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white shadow-md shadow-indigo-600/20 transition cursor-pointer"
+                title="تصدير المحضر إلى ملف PDF رسمي عالي الدقة"
               >
                 <Download className="w-4 h-4" />
                 <span>تصدير PDF</span>
@@ -533,33 +537,37 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           </div>
 
           {/* Mobile Document Tools (if in editor) */}
-          {activeScreen === 'editor' && currentUser.role !== 'regular' && (
+          {activeScreen === 'editor' && (
             <div className="space-y-2 bg-slate-800/80 p-3 rounded-xl border border-slate-700 text-xs">
               <div className="font-bold text-slate-400 text-[11px]">أدوات وإجراءات المحضر:</div>
               <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onOpenQuickAdd();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex items-center justify-center gap-1.5 p-2 bg-slate-700 hover:bg-slate-600 text-slate-100 rounded-lg font-semibold"
-                >
-                  <PlusCircle className="w-4 h-4 text-emerald-400" />
-                  <span>إضافة سريع</span>
-                </button>
+                {currentUser.role !== 'regular' && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onOpenQuickAdd();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex items-center justify-center gap-1.5 p-2 bg-slate-700 hover:bg-slate-600 text-slate-100 rounded-lg font-semibold"
+                    >
+                      <PlusCircle className="w-4 h-4 text-emerald-400" />
+                      <span>إضافة سريع</span>
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    onOpenSignatureModal();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex items-center justify-center gap-1.5 p-2 bg-slate-700 hover:bg-slate-600 text-slate-100 rounded-lg font-semibold"
-                >
-                  <PenTool className="w-4 h-4 text-amber-400" />
-                  <span>التوقيع الإلكتروني</span>
-                </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onOpenSignatureModal();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex items-center justify-center gap-1.5 p-2 bg-slate-700 hover:bg-slate-600 text-slate-100 rounded-lg font-semibold"
+                    >
+                      <PenTool className="w-4 h-4 text-amber-400" />
+                      <span>التوقيع الإلكتروني</span>
+                    </button>
+                  </>
+                )}
 
                 <button
                   type="button"

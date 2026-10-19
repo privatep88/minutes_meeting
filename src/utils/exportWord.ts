@@ -17,10 +17,27 @@ import {
 } from 'docx';
 import { MeetingMinute } from '../types/meeting';
 import { OFFICIAL_SAAED_LOGO } from '../data/defaultData';
+import { isExcludedFromCenter } from './numbering';
 
 /**
- * Safely converts a base64 Data URL to a Uint8Array for docx ImageRun.
+ * Safely converts a base64 Data URL or fetches a relative URL into a Uint8Array for docx ImageRun.
  */
+async function getImageBytes(src?: string): Promise<Uint8Array | null> {
+  if (!src || typeof src !== 'string') return null;
+  try {
+    if (src.startsWith('data:')) {
+      return dataUrlToUint8Array(src);
+    }
+    const response = await fetch(src);
+    if (!response.ok) return null;
+    const arrayBuffer = await response.arrayBuffer();
+    return new Uint8Array(arrayBuffer);
+  } catch (err) {
+    console.warn('Could not fetch image bytes for Word export:', err);
+    return null;
+  }
+}
+
 function dataUrlToUint8Array(dataUrl: string): Uint8Array | null {
   try {
     if (!dataUrl || typeof dataUrl !== 'string') return null;
@@ -71,7 +88,7 @@ export async function exportMeetingToWord(meeting: MeetingMinute): Promise<void>
   const arabicFont = 'Cairo';
 
   // 1. Prepare Logo image
-  const logoBytes = dataUrlToUint8Array(meeting.logoSrc || OFFICIAL_SAAED_LOGO);
+  const logoBytes = await getImageBytes(meeting.logoSrc || OFFICIAL_SAAED_LOGO);
   const logoCellParagraphs: Paragraph[] = logoBytes
     ? [
         new Paragraph({
@@ -463,6 +480,8 @@ export async function exportMeetingToWord(meeting: MeetingMinute): Promise<void>
   meeting.sections.forEach((section) => {
     // Navy Divider Banner for Section
     if (section.title && section.title.trim() !== '') {
+      const isRightAligned = isExcludedFromCenter(section.title);
+
       decisionRows.push(
         new TableRow({
           children: [
@@ -470,7 +489,7 @@ export async function exportMeetingToWord(meeting: MeetingMinute): Promise<void>
               [
                 new Paragraph({
                   bidirectional: true,
-                  alignment: AlignmentType.RIGHT,
+                  alignment: isRightAligned ? AlignmentType.RIGHT : AlignmentType.CENTER,
                   spacing: { before: 40, after: 40 },
                   children: [
                     new TextRun({
@@ -512,15 +531,31 @@ export async function exportMeetingToWord(meeting: MeetingMinute): Promise<void>
               { widthPercent: 8, bgColor: isEven ? 'FFFFFF' : 'F8FAFC' }
             ),
             createCell(
-              [createRtlParagraph(item.topic || '', { bold: true, size: 20, alignment: AlignmentType.CENTER })],
+              [
+                createRtlParagraph(item.topic || '', {
+                  bold: true,
+                  size: 20,
+                  alignment: isExcludedFromCenter(item.topic) ? AlignmentType.RIGHT : AlignmentType.CENTER,
+                }),
+              ],
               { widthPercent: 32, bgColor: isEven ? 'FFFFFF' : 'F8FAFC' }
             ),
             createCell(
-              [createRtlParagraph(item.recommendation || '', { size: 20, alignment: AlignmentType.CENTER })],
+              [
+                createRtlParagraph(item.recommendation || '', {
+                  size: 20,
+                  alignment: isExcludedFromCenter(item.recommendation) ? AlignmentType.RIGHT : AlignmentType.CENTER,
+                }),
+              ],
               { widthPercent: 36, bgColor: isEven ? 'FFFFFF' : 'F8FAFC' }
             ),
             createCell(
-              [createRtlParagraph(item.responsible || '', { size: 20, alignment: AlignmentType.CENTER })],
+              [
+                createRtlParagraph(item.responsible || '', {
+                  size: 20,
+                  alignment: isExcludedFromCenter(item.responsible) ? AlignmentType.RIGHT : AlignmentType.CENTER,
+                }),
+              ],
               { widthPercent: 14, bgColor: isEven ? 'FFFFFF' : 'F8FAFC' }
             ),
             createCell(

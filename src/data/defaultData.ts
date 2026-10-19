@@ -21,7 +21,7 @@ export const initialMeetingData: MeetingMinute = {
   attendees: [
     { id: 'att-1', name: 'الاستاذ / فيصل سويد السليماني', jobTitle: 'رئيس قسم ادارة المرافق', status: 'حاضر' },
     { id: 'att-2', name: 'الاستاذ / معاذ حسين المصعبي', jobTitle: 'ضابط أول خدمات مرافق وأصول', status: 'حاضر' },
-    { id: 'att-3', name: 'الاستاذ / خالد احمد الجفري', jobTitle: 'ضابط أول الدعم اللوجستي والاستقبال', status: 'حاضر' },
+    { id: 'att-3', name: 'الاستاذ / خالد احمد الهاشمي', jobTitle: 'ضابط أول الدعم اللوجستي والاستقبال', status: 'حاضر' },
     { id: 'att-4', name: 'الاستاذة / ندى حسن العامري', jobTitle: 'ضابط أول سلامة وامن وحماية المرافق', status: 'حاضر' },
     { id: 'att-5', name: 'الاستاذ / خالد خميس اليحيائي', jobTitle: 'ضابط خدمات مرافق واصول', status: 'حاضر' },
     { id: 'att-6', name: 'الاستاذ / مالك سرور راشد اليحيائي', jobTitle: 'ضابط خدمات مرافق واصول', status: 'حاضر' },
@@ -61,7 +61,7 @@ export const initialMeetingData: MeetingMinute = {
     {
       id: 'sig-1',
       role: 'مقرر الاجتماع',
-      name: 'الاستاذ / خالد احمد الجفري',
+      name: 'الاستاذ / خالد احمد الهاشمي',
       sigImage: null,
       signedAt: '',
     },
@@ -153,7 +153,7 @@ export const sampleTemplates: { id: string; name: string; description: string; d
 export const DEFAULT_SYSTEM_USERS: SystemUser[] = [
   {
     id: 'user-rapporteur',
-    name: 'الاستاذ / خالد احمد الجفري',
+    name: 'الاستاذ / خالد احمد الهاشمي',
     jobTitle: 'مقرر الاجتماع - قسم إدارة المرافق',
     role: 'rapporteur',
     roleTitle: 'مقرر الاجتماع',

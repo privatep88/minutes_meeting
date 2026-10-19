@@ -27,6 +27,8 @@ import { TemplatesScreen } from './components/TemplatesScreen';
 import { exportMeetingToWord } from './utils/exportWord';
 import { exportMeetingToPdf } from './utils/exportPdf';
 import { checkMandatorySignatures } from './utils/signatureUtils';
+import { renumberSections } from './utils/numbering';
+import { syncAllCompletedFromMeetings } from './utils/permanentActionItems';
 import { AlertTriangle, CheckCircle2, RotateCcw, ShieldAlert } from 'lucide-react';
 
 const STORAGE_KEY_MEETINGS = 'saaed_meetings_archive_v1';
@@ -37,7 +39,7 @@ const STORAGE_KEY_TEMPLATES = 'saaed_templates_registry_v2';
 const INITIAL_STAFF_MEMBERS: StaffMember[] = [
   { id: 'stf-1', name: 'الاستاذ / فيصل سويد السليماني', jobTitle: 'رئيس قسم ادارة المرافق', department: 'قسم إدارة المرافق', isHead: true },
   { id: 'stf-2', name: 'الاستاذ / معاذ حسين المصعبي', jobTitle: 'ضابط أول خدمات مرافق وأصول', department: 'قسم إدارة المرافق' },
-  { id: 'stf-3', name: 'الاستاذ / خالد احمد الجفري', jobTitle: 'ضابط أول الدعم اللوجستي والاستقبال', department: 'الخدمات المساندة' },
+  { id: 'stf-3', name: 'الاستاذ / خالد احمد الهاشمي', jobTitle: 'ضابط أول الدعم اللوجستي والاستقبال', department: 'الخدمات المساندة' },
   { id: 'stf-4', name: 'الاستاذة / ندى حسن العامري', jobTitle: 'ضابط أول سلامة وامن وحماية المرافق', department: 'السلامة والأمن' },
   { id: 'stf-5', name: 'الاستاذ / خالد خميس اليحيائي', jobTitle: 'ضابط خدمات مرافق واصول', department: 'قسم إدارة المرافق' },
   { id: 'stf-6', name: 'الاستاذ / مالك سرور راشد اليحيائي', jobTitle: 'ضابط خدمات مرافق واصول', department: 'قسم إدارة المرافق' },
@@ -53,7 +55,7 @@ export default function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-            // Adopt official logo and ensure latest revision defaults
+            // Adopt official logo, ensure latest revision defaults & migrate name
             const migrated = parsed.map((m: MeetingMinute) => {
               m.logoSrc = 'logo.png';
             if (
@@ -66,6 +68,20 @@ export default function App() {
               m.revisionNumber = '02';
               m.title = 'محضر اجتماع رقم ( 01 ) لسنة 2026';
               m.formNumber = '...../20- /-01/1-02:';
+            }
+            if (Array.isArray(m.attendees)) {
+              m.attendees.forEach((att) => {
+                if (att.name?.includes('الجفري')) {
+                  att.name = att.name.replace(/الجفري/g, 'الهاشمي');
+                }
+              });
+            }
+            if (Array.isArray(m.signatures)) {
+              m.signatures.forEach((sig) => {
+                if (sig.name?.includes('الجفري')) {
+                  sig.name = sig.name.replace(/الجفري/g, 'الهاشمي');
+                }
+              });
             }
             return m;
           });
@@ -96,7 +112,10 @@ export default function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          return parsed.map((s: StaffMember) => ({
+            ...s,
+            name: s.name?.includes('الجفري') ? s.name.replace(/الجفري/g, 'الهاشمي') : s.name,
+          }));
         }
       }
     } catch (e) {
@@ -127,7 +146,12 @@ export default function App() {
       const saved = localStorage.getItem('saaed_system_users_v2');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((u: SystemUser) => ({
+            ...u,
+            name: u.name?.includes('الجفري') ? u.name.replace(/الجفري/g, 'الهاشمي') : u.name,
+          }));
+        }
       }
     } catch (e) {
       console.warn('Failed reading system users', e);
@@ -381,6 +405,7 @@ export default function App() {
       setMeetings([freshMeeting]);
       setActiveMeetingId(freshMeeting.id);
       persistMeetings([freshMeeting], freshMeeting.id);
+      syncAllCompletedFromMeetings([freshMeeting]);
       return;
     }
 
@@ -389,6 +414,7 @@ export default function App() {
     const nextId = updated[0].id;
     setActiveMeetingId(nextId);
     persistMeetings(updated, nextId);
+    syncAllCompletedFromMeetings(updated);
   };
 
   // Reset active meeting to default
@@ -516,9 +542,10 @@ export default function App() {
     const updatedSections = activeMeeting.sections.map((sec) =>
       sec.id === secId ? { ...sec, items: [...sec.items, newItem] } : sec
     );
+    const renumbered = renumberSections(updatedSections, activeMeeting.continuousNumbering);
     handleUpdateActiveMeeting({
       ...activeMeeting,
-      sections: updatedSections,
+      sections: renumbered,
     });
   };
 
@@ -554,9 +581,11 @@ export default function App() {
         status: 'جديد',
       });
     }
+    const updatedSections = [...activeMeeting.sections, { id: newSectionId, title, items }];
+    const renumbered = renumberSections(updatedSections, activeMeeting.continuousNumbering);
     handleUpdateActiveMeeting({
       ...activeMeeting,
-      sections: [...activeMeeting.sections, { id: newSectionId, title, items }],
+      sections: renumbered,
     });
   };
 
@@ -716,39 +745,67 @@ export default function App() {
     }
   };
 
-  // Print A4
-  const handlePrint = () => {
+  // Print A4 (Prints the official meeting minutes with exact formatting)
+  const handlePrint = async () => {
     const originalMode = isEditMode;
+    const originalScreen = activeScreen;
+
+    if (activeScreen !== 'editor') {
+      setActiveScreen('editor');
+    }
     setIsEditMode(false);
-    showToast('جاري تحضير المستند لنمط الطباعة A4 المعتمد...');
+    showToast('جاري تحضير المحضر للطباعة بنمط A4 المعتمد...');
+
+    // Wait for document to mount in preview mode
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    const restoreState = () => {
+      setIsEditMode(originalMode);
+      if (originalScreen !== 'editor') {
+        setActiveScreen(originalScreen);
+      }
+      window.removeEventListener('afterprint', restoreState);
+    };
+
+    window.addEventListener('afterprint', restoreState);
+
     setTimeout(() => {
       window.print();
-      setIsEditMode(originalMode);
-    }, 300);
+      // Backup restore timeout if afterprint is cancelled or not fired
+      setTimeout(restoreState, 2000);
+    }, 150);
   };
 
-  // Direct PDF Export using html2pdf.js with 100% exact design and Cairo font
+  // Direct PDF Export with 100% exact design and Cairo font
   const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   const handleExportPDF = async () => {
     if (isExportingPdf) return;
     const originalMode = isEditMode;
+    const originalScreen = activeScreen;
+
     try {
       setIsExportingPdf(true);
+      if (activeScreen !== 'editor') {
+        setActiveScreen('editor');
+      }
       setIsEditMode(false);
-      showToast('جاري معالجة وتصدير محضر الاجتماع إلى ملف PDF عالي الجودة بنسبة 100%...');
+      showToast('جاري تجهيز وتصدير محضر الاجتماع إلى ملف PDF رسمي عالي الدقة...');
 
       // Wait for React re-render in preview mode
-      await new Promise((resolve) => setTimeout(resolve, 250));
+      await new Promise((resolve) => setTimeout(resolve, 350));
 
       await exportMeetingToPdf(activeMeeting, 'printableDocument');
-      showToast('تم تصدير محضر الاجتماع بصيغة PDF بنجاح بكامل التنسيقات والتصميم!');
+      showToast('تم تصدير محضر الاجتماع بصيغة PDF بنجاح بكامل التنسيقات والتصميم المعتمد!');
     } catch (err) {
       console.error('PDF Export Error:', err);
       showToast('حدث خطأ أثناء تصدير محضر الاجتماع إلى PDF');
     } finally {
       setIsExportingPdf(false);
       setIsEditMode(originalMode);
+      if (originalScreen !== 'editor') {
+        setActiveScreen(originalScreen);
+      }
     }
   };
 
@@ -843,8 +900,14 @@ export default function App() {
         {activeScreen === 'action_items' && (
           <ActionItemsScreen
             meeting={activeMeeting}
+            allMeetings={meetings}
             currentUser={currentUser}
             onUpdateMeeting={handleUpdateActiveMeeting}
+            onUpdateMeetings={(updatedMeetings) => {
+              setMeetings(updatedMeetings);
+              persistMeetings(updatedMeetings);
+            }}
+            onSelectMeeting={(mId) => handleSelectMeeting(mId, true)}
             onGoToEditor={() => {
               if (currentUser.role === 'regular') {
                 showToast('بصفتك مستخدم عادي، يقتصر وصولك على أرشيف المحاضر وسجل التكليفات.');
