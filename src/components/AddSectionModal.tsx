@@ -42,7 +42,7 @@ export const AddSectionModal: React.FC<AddSectionModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs md:text-sm">
           <div>
-            <label className="block font-medium text-slate-700 mb-1">عنوان التصنيف الجديد:</label>
+            <label className="block font-medium text-slate-700 mb-1 text-right">عنوان التصنيف الجديد:</label>
             <input
               type="text"
               required
@@ -50,19 +50,21 @@ export const AddSectionModal: React.FC<AddSectionModalProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="مثال: المواضيع العاجلة والطارئة :"
-              className="w-full border border-slate-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 text-right"
+              dir="rtl"
             />
           </div>
 
           <div>
-            <label className="block font-medium text-slate-700 mb-1">عدد الصفوف المبدئية:</label>
+            <label className="block font-medium text-slate-700 mb-1 text-right">عدد الصفوف المبدئية:</label>
             <input
               type="number"
               min={1}
               max={10}
               value={rowCount}
               onChange={(e) => setRowCount(Number(e.target.value) || 1)}
-              className="w-full border border-slate-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-300 rounded-lg p-2 text-xs md:text-sm focus:ring-2 focus:ring-blue-500 text-right"
+              dir="rtl"
             />
           </div>
 

@@ -480,8 +480,6 @@ export async function exportMeetingToWord(meeting: MeetingMinute): Promise<void>
   meeting.sections.forEach((section) => {
     // Navy Divider Banner for Section
     if (section.title && section.title.trim() !== '') {
-      const isRightAligned = isExcludedFromCenter(section.title);
-
       decisionRows.push(
         new TableRow({
           children: [
@@ -489,7 +487,7 @@ export async function exportMeetingToWord(meeting: MeetingMinute): Promise<void>
               [
                 new Paragraph({
                   bidirectional: true,
-                  alignment: isRightAligned ? AlignmentType.RIGHT : AlignmentType.CENTER,
+                  alignment: AlignmentType.RIGHT,
                   spacing: { before: 40, after: 40 },
                   children: [
                     new TextRun({

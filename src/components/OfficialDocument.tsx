@@ -733,36 +733,20 @@ export const OfficialDocument: React.FC<OfficialDocumentProps> = ({
                     <tr className="bg-[#0c2a59] text-white font-bold">
                       <td
                         colSpan={5}
-                        className={`py-1.5 px-3 ${
-                          isExcludedFromCenter(section.title) ? 'text-right' : 'text-center'
-                        }`}
+                        className="py-1.5 px-3 text-right"
                       >
-                        <div
-                          className={`flex items-center relative ${
-                            isExcludedFromCenter(section.title) ? 'justify-between' : 'justify-center'
-                          }`}
-                        >
+                        <div className="flex items-center justify-between relative">
                           <div
                             contentEditable={isEditMode}
                             suppressContentEditableWarning
                             onBlur={(e) => updateSectionTitle(section.id, e.currentTarget.innerText)}
-                            className={`editable-cell text-sm tracking-wide text-white font-bold ${
-                              isExcludedFromCenter(section.title)
-                                ? 'text-right flex-1 pr-1'
-                                : 'text-center w-full px-2'
-                            }`}
+                            className="editable-cell text-sm tracking-wide text-white font-bold text-right flex-1 pr-1"
                           >
                             {section.title}
                           </div>
 
                           {isEditMode && (
-                            <div
-                              className={`no-print flex items-center gap-1.5 ${
-                                isExcludedFromCenter(section.title)
-                                  ? 'mr-2'
-                                  : 'absolute left-2 top-1/2 -translate-y-1/2'
-                              }`}
-                            >
+                            <div className="no-print flex items-center gap-1.5 mr-2">
                               <button
                                 type="button"
                                 onClick={() => addItemToSection(section.id)}
