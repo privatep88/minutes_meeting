@@ -24,6 +24,7 @@ import { ArchiveScreen } from './components/ArchiveScreen';
 import { ActionItemsScreen } from './components/ActionItemsScreen';
 import { DirectoryScreen } from './components/DirectoryScreen';
 import { TemplatesScreen } from './components/TemplatesScreen';
+import { LoginPage } from './components/login/LoginPage';
 import { exportMeetingToWord } from './utils/exportWord';
 import { exportMeetingToPdf } from './utils/exportPdf';
 import { checkMandatorySignatures } from './utils/signatureUtils';
@@ -172,6 +173,9 @@ export default function App() {
     return systemUsers[0] || DEFAULT_SYSTEM_USERS[0];
   });
 
+  // Authentication state (starts at Login Page; no passwords stored in browser storage)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
   // Screen management & mode
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>('editor');
   const [isEditMode, setIsEditMode] = useState<boolean>(true);
@@ -180,6 +184,30 @@ export default function App() {
 
   const isLimitedPermission = (user: SystemUser) =>
     user.role === 'regular' || user.permissionType === 'limited';
+
+  const handleLoginSuccess = (authenticatedUser: SystemUser) => {
+    setCurrentUser(authenticatedUser);
+    try {
+      localStorage.setItem('saaed_active_user_id', authenticatedUser.id);
+    } catch {
+      // ignore
+    }
+
+    if (isLimitedPermission(authenticatedUser)) {
+      setIsEditMode(false);
+      setActiveScreen('archive');
+    } else {
+      setIsEditMode(true);
+      setActiveScreen('editor');
+    }
+
+    setIsAuthenticated(true);
+    showToast(`مرحباً بك (${authenticatedUser.name}) — تم تسجيل الدخول بنجاح بصلاحية: ${authenticatedUser.roleTitle}`);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+  };
 
   const handleSelectUser = (user: SystemUser) => {
     setCurrentUser(user);
@@ -810,6 +838,15 @@ export default function App() {
     }
   };
 
+  if (!isAuthenticated) {
+    return (
+      <LoginPage
+        systemUsers={systemUsers}
+        onLoginSuccess={handleLoginSuccess}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
       {/* 1. TOP MAIN APPLICATION NAVBAR */}
@@ -835,6 +872,7 @@ export default function App() {
         systemUsers={systemUsers}
         onSelectUser={handleSelectUser}
         onOpenUsersManagement={() => setIsUsersManagementOpen(true)}
+        onLogout={handleLogout}
         onLockedEditAttempt={() =>
           showToast('المحضر معتمد وموقع رسمياً ولا يمكن التعديل عليه إلا من خلال تبويب "أرشيف المحاضر"')
         }

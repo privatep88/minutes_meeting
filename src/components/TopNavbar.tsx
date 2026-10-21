@@ -17,6 +17,7 @@ import {
   Shield,
   Menu,
   X,
+  LogOut,
 } from 'lucide-react';
 import { ActiveScreen, SystemUser } from '../types/meeting';
 
@@ -40,6 +41,7 @@ interface TopNavbarProps {
   onPrint: () => void;
   saveStatus: 'saved' | 'saving';
   onOpenUsersManagement?: () => void;
+  onLogout?: () => void;
 }
 
 export const TopNavbar: React.FC<TopNavbarProps> = ({
@@ -61,6 +63,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   onPrint,
   saveStatus,
   onOpenUsersManagement,
+  onLogout,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -126,6 +129,17 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
             >
               <Users className="w-2.5 h-2.5" />
               <span className="hidden md:inline">إدارة المستخدمين</span>
+            </button>
+          )}
+          {onLogout && (
+            <button
+              type="button"
+              onClick={onLogout}
+              title="تسجيل الخروج والعودة لشاشة الدخول"
+              className="p-0.5 rounded bg-rose-600/25 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 transition cursor-pointer flex items-center gap-1 text-[9px] font-bold px-1.5 shrink-0"
+            >
+              <LogOut className="w-2.5 h-2.5" />
+              <span className="hidden sm:inline">خروج</span>
             </button>
           )}
         </div>
@@ -422,6 +436,20 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
                     className="p-1 rounded bg-blue-600/30 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/40 text-[10px] font-bold px-1.5"
                   >
                     إدارة المستخدمين
+                  </button>
+                )}
+
+                {onLogout && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onLogout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="p-1 rounded bg-rose-600/30 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 text-[10px] font-bold px-1.5 flex items-center gap-1"
+                  >
+                    <LogOut className="w-3 h-3" />
+                    <span>خروج</span>
                   </button>
                 )}
               </div>
